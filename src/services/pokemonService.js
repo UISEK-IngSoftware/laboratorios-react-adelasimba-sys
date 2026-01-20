@@ -57,3 +57,20 @@ export async function addPokemon(pokemonData) {
     );
     return response.data;
 }
+
+//Examen Parcial 2
+//Nuevos métodos
+// Actualizar un Pokemon
+export async function updatePokemon(id, pokemonData) {
+    let payload = { ...pokemonData };
+    if (pokemonData.picture instanceof File) {
+        payload.picture = await fileToBase64(pokemonData.picture);
+    }
+    const response = await axios.put(`${API_BASE_URL}/pokemons/${id}/`, payload);
+    return response.data;
+}
+
+// Eliminar un Pokemon
+export async function deletePokemon(id) {
+    await axios.delete(`${API_BASE_URL}/pokemons/${id}/`);
+}
