@@ -1,27 +1,43 @@
 import { useEffect, useState } from 'react';
-import { Container, Typography, Grid, Card, CardContent, CardActions, Button, CardMedia, IconButton } from '@mui/material';
-import { Edit, Delete } from '@mui/icons-material';
+import { Container, Typography, Grid, Card, CardContent, CardActions, CardMedia, IconButton, Button, Box } from '@mui/material';
+import { Edit, Delete, Add } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import { fetchTrainers, deleteTrainer } from '../services/trainerService';
+import Spinner from '../components/Spinner';
 
 export default function TrainerList() {
     const [trainers, setTrainers] = useState([]);
+    const [loading, setLoading] = useState(true);
+
     const navigate = useNavigate();
     const isLoggedIn = localStorage.getItem('access_token') !== null;
     const mediaUrl = import.meta.env.VITE_MEDIA_URL;
 
-    useEffect(() => {
-        loadTrainers();
-    }, []);
+    const getImageUrl = (img) => {
+        if (!img) return 'https://via.placeholder.com/200';
+        if (img.startsWith('http') || img.startsWith('data:')) return img;
+        return `${mediaUrl}/${img}`;
+    };
 
     const loadTrainers = async () => {
+        setLoading(true);
         try {
             const data = await fetchTrainers();
             setTrainers(data);
         } catch (err) {
             console.error("Error al cargar entrenadores:", err);
+        } finally {
+            setLoading(false);
         }
     };
+
+    useEffect(() => {
+        loadTrainers();
+    }, []);
+
+    if (loading) {
+        return <Spinner />;
+    }
 
     const handleDelete = async (id) => {
         if (window.confirm("¿Estás seguro de eliminar a este entrenador?")) {
@@ -37,15 +53,31 @@ export default function TrainerList() {
 
     return (
         <Container>
-            <Typography variant="h4" sx={{ my: 3 }}>Lista de Entrenadores</Typography>
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', my: 3 }}>
+                <Typography variant="h4">
+                    Lista de Entrenadores
+                </Typography>
+                
+                {isLoggedIn && (
+                    <Button 
+                        variant="contained" 
+                        color="primary" 
+                        startIcon={<Add />}
+                        onClick={() => navigate('/add-trainer')}
+                    >
+                        Nuevo Entrenador
+                    </Button>
+                )}
+            </Box>
+
             <Grid container spacing={3}>
                 {trainers.map((trainer) => (
-                    <Grid item key={trainer.id} xs={12} sm={6} md={4}>
+                    <Grid key={trainer.id} size xs={12} sm={6} md={4}>
                         <Card>
                             <CardMedia
                                 component="img"
                                 height="200"
-                                image={trainer.picture ? `${mediaUrl}/${trainer.picture}` : 'https://via.placeholder.com/200'}
+                                image={getImageUrl(trainer.picture)}
                                 alt={trainer.first_name}
                             />
                             <CardContent>
@@ -57,17 +89,16 @@ export default function TrainerList() {
                                 </Typography>
                             </CardContent>
                             <CardActions>
-                                {/* Botones protegidos por login */}
                                 {isLoggedIn && (
                                     <>
-                                        <IconButton 
-                                            color="primary" 
+                                        <IconButton
+                                            color="primary"
                                             onClick={() => navigate(`/edit-trainer/${trainer.id}`)}
                                         >
                                             <Edit />
                                         </IconButton>
-                                        <IconButton 
-                                            color="error" 
+                                        <IconButton
+                                            color="error"
                                             onClick={() => handleDelete(trainer.id)}
                                         >
                                             <Delete />

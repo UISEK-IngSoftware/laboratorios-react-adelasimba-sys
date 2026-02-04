@@ -1,4 +1,4 @@
-//Examen Parcial 2
+// Examen Parcial 2
 import axios from "axios";
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
@@ -16,20 +16,33 @@ export async function fetchTrainers() {
     return response.data;
 }
 
-export async function addTrainer(trainerData) {
+export async function getTrainer(id) {
+    const response = await axios.get(`${API_BASE_URL}/trainers/${id}/`);
+    return response.data;
+}
+
+export async function createTrainer(trainerData) {
     const payload = { ...trainerData };
+    
     if (trainerData.picture instanceof File) {
         payload.picture = await fileToBase64(trainerData.picture);
+    } else {
+        delete payload.picture;
     }
+
     const response = await axios.post(`${API_BASE_URL}/trainers/`, payload);
     return response.data;
 }
 
 export async function updateTrainer(id, trainerData) {
     const payload = { ...trainerData };
+    
     if (trainerData.picture instanceof File) {
         payload.picture = await fileToBase64(trainerData.picture);
+    } else {
+        delete payload.picture;
     }
+
     const response = await axios.put(`${API_BASE_URL}/trainers/${id}/`, payload);
     return response.data;
 }

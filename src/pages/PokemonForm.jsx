@@ -1,35 +1,43 @@
 import { Box, Button, TextField, Typography } from "@mui/material";
 import { useState, useEffect } from "react";
-import { useNavigate,useParams } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { addPokemon, updatePokemon, fetchPokemons } from "../services/pokemonService";
+import Spinner from "../components/Spinner";
 
 export default function PokemonForm() {
     const navigate = useNavigate();
-
-    //Evaluacion Parcial 2
-    const { id } = useParams(); 
+    const { id } = useParams();
     const isEdit = Boolean(id);
 
-    const [pokemonData, setPokemonData] = useState ({
-        name: '',
-        type: '',
-        weight: '',
-        height: '',
-        picture: null
+    const [loading, setLoading] = useState(false);
+
+    const [pokemonData, setPokemonData] = useState({
+        name: "",
+        type: "",
+        weight: "",
+        height: "",
+        image: null
     });
-    // Efecto para cargar los datos
+
+    const toBase64 = (file) =>
+        new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.readAsDataURL(file);
+            reader.onload = () => resolve(reader.result);
+            reader.onerror = (error) => reject(error);
+        });
+
     useEffect(() => {
         if (isEdit) {
             fetchPokemons().then((data) => {
-                const pokemonToEdit = data.find(p => p.id === parseInt(id));
-                if (pokemonToEdit) {
-                    // Cargar los datos en el formulario
+                const pokemon = data.find(p => p.id === parseInt(id));
+                if (pokemon) {
                     setPokemonData({
-                        name: pokemonToEdit.name,
-                        type: pokemonToEdit.type,
-                        weight: pokemonToEdit.weight,
-                        height: pokemonToEdit.height,
-                        picture: null 
+                        name: pokemon.name,
+                        type: pokemon.type,
+                        weight: pokemon.weight,
+                        height: pokemon.height,
+                        image: null 
                     });
                 }
             });
@@ -38,51 +46,100 @@ export default function PokemonForm() {
 
     const handleChange = (e) => {
         const { name, value, files } = e.target;
-        if (name === 'picture') {
-            setPokemonData({...pokemonData,picture: files [0]});
+        if (name === "image") {
+            setPokemonData({ ...pokemonData, image: files[0] });
         } else {
-            setPokemonData({...pokemonData,[name]: value });
-        }
-    };
-    const handleSubmit = async (e) => {
-        e.preventDefault();
-        try {
-            if (isEdit) {
-                // EDITAR (PUT)
-                await updatePokemon(id, pokemonData);
-                alert("Pokemon actualizado exitosamente");
-            } else {
-                // AGREGAR (POST)
-                await addPokemon(pokemonData);
-                alert("Pokemon agregado exitosamente");
-            }
-            navigate('/');
-        } catch (error) {
-            console.error("Error en la operación", error);
-            alert("Error al procesar la solicitud");
+            setPokemonData({ ...pokemonData, [name]: value });
         }
     };
 
-    return(
-            <Box sx={{ maxWidth: 500, margin: 'auto', mt: 4 }}>
+    const handleSubmit = async (e) => {
+        e.preventDefault();
+        setLoading(true);
+
+        try {
+            let payload = {
+                name: pokemonData.name,
+                type: pokemonData.type,
+                weight: pokemonData.weight,
+                height: pokemonData.height
+            };
+
+            if (pokemonData.image instanceof File) {
+                payload.image = await toBase64(pokemonData.image);
+            }
+
+            if (isEdit) {
+                await updatePokemon(id, payload); // PATCH
+                alert("Pokemon actualizado exitosamente");
+            } else {
+                await addPokemon(payload);
+                alert("Pokemon agregado exitosamente");
+            }
+
+            navigate("/");
+        } catch (error) {
+            console.error("Error en la operación", error.response?.data);
+            alert("Error al procesar la solicitud");
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    if (loading) return <Spinner />;
+
+    return (
+        <Box sx={{ maxWidth: 500, margin: "auto", mt: 4 }}>
             <Typography variant="h4" gutterBottom>
                 {isEdit ? "Editar Pokemon" : "Nuevo Pokemon"}
             </Typography>
-            <Box component="form" onSubmit={handleSubmit} sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                <TextField label="Nombre" name="name" variant="outlined" onChange={handleChange} value={pokemonData.name} required />
-                <TextField label="Tipo" name="type" variant="outlined" onChange={handleChange} value={pokemonData.type} required />
-                <TextField label="Peso" name="weight" variant="outlined" onChange={handleChange} value={pokemonData.weight} />
-                <TextField label="Altura" name="height" variant="outlined" onChange={handleChange} value={pokemonData.height} />
-                
+
+            <Box
+                component="form"
+                onSubmit={handleSubmit}
+                sx={{ display: "flex", flexDirection: "column", gap: 2 }}
+            >
+                <TextField
+                    label="Nombre"
+                    name="name"
+                    value={pokemonData.name}
+                    onChange={handleChange}
+                    required
+                />
+
+                <TextField
+                    label="Tipo"
+                    name="type"
+                    value={pokemonData.type}
+                    onChange={handleChange}
+                    required
+                />
+
+                <TextField
+                    label="Peso"
+                    name="weight"
+                    value={pokemonData.weight}
+                    onChange={handleChange}
+                />
+
+                <TextField
+                    label="Altura"
+                    name="height"
+                    value={pokemonData.height}
+                    onChange={handleChange}
+                />
+
                 <Typography variant="body2" color="text.secondary">
                     Foto del Pokemon:
                 </Typography>
-                <input type="file" name="picture" onChange={handleChange} />
-                
-                <Button variant="contained" type="submit" color="primary">
+
+                <input type="file" name="image" onChange={handleChange} />
+
+                <Button variant="contained" type="submit">
                     {isEdit ? "Guardar Cambios" : "Agregar Pokemon"}
                 </Button>
-                <Button variant="outlined" onClick={() => navigate('/')}>
+
+                <Button variant="outlined" onClick={() => navigate("/")}>
                     Cancelar
                 </Button>
             </Box>

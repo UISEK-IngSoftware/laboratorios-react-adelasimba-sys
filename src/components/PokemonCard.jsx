@@ -8,7 +8,16 @@ import { useNavigate } from "react-router-dom";
 export default function PokemonCard({ pokemon, onDelete }) {
     const navigate = useNavigate();
     const mediaUrl = import.meta.env.VITE_MEDIA_URL;
-    const imagePath = `${mediaUrl}/${pokemon.picture}`;
+    
+    const getImageUrl = (img) => {
+        if (!img) return "https://via.placeholder.com/200";
+        if (img.startsWith('http') || img.startsWith('data:')) {
+            return img;
+        }
+        return `${mediaUrl}/${img}`; 
+    };
+
+    const imagePath = getImageUrl(pokemon.image);
     
     // Verificar si el usuario está logueado para mostrar/ocultar botones
     const isLoggedIn = localStorage.getItem('access_token') !== null;

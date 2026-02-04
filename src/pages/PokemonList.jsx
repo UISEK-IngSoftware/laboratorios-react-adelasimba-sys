@@ -1,14 +1,17 @@
-import { Grid,Container } from '@mui/material';
+import { Grid,Container, Box, CircularProgress } from '@mui/material';
 import PokemonCard from '../components/PokemonCard';
 import { useEffect, useState } from 'react';
 import { fetchPokemons, deletePokemon } from '../services/pokemonService';
+import Spinner from '../components/Spinner';
 
 
 export default function PokemonList() {
     const [pokemons, setPokemons] = useState([]);
+    const [loading, setLoading] = useState([true]);
 
     // Función cargar pokemons
     const loadPokemons = () => {
+        setLoading(true); //microinteracciones
         fetchPokemons()
             .then((data) => {
                 setPokemons(data);
@@ -16,19 +19,27 @@ export default function PokemonList() {
             .catch((err) => { 
                 alert("Error obteniendo los pokemons");
                 console.error("Detalle del error:", err); 
-            });
+            })
+            .finally(() => {setLoading(false);
+            }); //microinteracciones
     };
 
     useEffect(() => {
         loadPokemons();
     }, []);
+//microinteracciones
+    if (loading) {
+        return (
+            <Spinner/>
+        );
+    }
 
     // Función DELETE
     const handleDelete = async (id) => {
         if (window.confirm("¿Estás seguro de que deseas eliminar este Pokémon?")) {
             try {
                 await deletePokemon(id);
-                // Actualizar para que desaparezca de la vista
+
                 setPokemons(pokemons.filter(p => p.id !== id));
             } catch (err) {
                 console.error("Error al eliminar:", err);
@@ -41,7 +52,7 @@ export default function PokemonList() {
         <Container>
             <Grid container spacing={2} marginTop={2}>
                 {pokemons.map((pokemon) => (
-                    <Grid item key={pokemon.id} xs={12} sm={6} md={4}>
+                    <Grid size key={pokemon.id} xs={12} sm={6} md={4}>
                         <PokemonCard pokemon={pokemon} onDelete={handleDelete} />
                     </Grid>
                 ))}

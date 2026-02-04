@@ -10,67 +10,51 @@ axios.interceptors.request.use((config) => {
     return config;
 });
 
-/**
- * Obtener la lista de pokemon
- * @returns 
- */
 export async function fetchPokemons() {
-    const response = await axios.get(`${API_BASE_URL}/pokemons`);
-    console.log(response);
+    const response = await axios.get(`${API_BASE_URL}/pokemons/`);
     return response.data;
 }
 
-/**
- * Convertir un archivo a Base64
- * @param {} file 
- * @returns 
- */
-function fileToBase64(file) {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => {
-      // reader.result ya incluye el encabezado, lo usamos completo
-      resolve(reader.result);
-    };
-    reader.onerror = reject;
-    reader.readAsDataURL(file);
-  });
+export async function getPokemon(id) {
+    const response = await axios.get(`${API_BASE_URL}/pokemons/${id}/`);
+    return response.data;
 }
 
-/**
- * Crear un nuevo pokemon
- * @param {*} pokemonData 
- * @returns 
- */
 export async function addPokemon(pokemonData) {
-    let pictureBase64 = '';
-    if (pokemonData.picture) {
-        pictureBase64 = await fileToBase64(pokemonData.picture);
-    }
-    const payload = {
-        ...pokemonData,
-        picture: pictureBase64
-    };
-    const response = await axios.post(
-        `${API_BASE_URL}/pokemons/`,
-        payload
-    );
-    return response.data;
-}
+    const payload = { ...pokemonData };
 
-//Examen Parcial 2
-//Nuevos métodos
-// Actualizar un Pokemon
-export async function updatePokemon(id, pokemonData) {
-    let payload = { ...pokemonData };
-    if (pokemonData.picture instanceof File) {
+    if (pokemonData.picture && pokemonData.picture instanceof File) {
         payload.picture = await fileToBase64(pokemonData.picture);
+    } else {
+        delete payload.picture;
     }
-    const response = await axios.put(`${API_BASE_URL}/pokemons/${id}/`, payload);
+
+    const response = await axios.post(`${API_BASE_URL}/pokemons/`, payload);
     return response.data;
 }
 
-// Eliminar un Pokemon
+export async function updatePokemon(id, pokemonData) {
+    const payload = { ...pokemonData };
+
+    if (pokemonData.picture && pokemonData.picture instanceof File) {
+        payload.picture = await fileToBase64(pokemonData.picture);
+    } else {
+        delete payload.picture;
+    }
+
+    const response = await axios.patch(`${API_BASE_URL}/pokemons/${id}/`, payload);
+    return response.data;
+}
+
 export async function deletePokemon(id) {
     await axios.delete(`${API_BASE_URL}/pokemons/${id}/`);
+}
+
+function fileToBase64(file) {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result);
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+    });
 }
